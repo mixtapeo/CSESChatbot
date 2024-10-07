@@ -1,55 +1,18 @@
-# ResumeGPT
 
+# CSESChatbot
+
+A fork of my original project, ResumeGPT, modified for CSES' use case.
 A GPT 4.0 Mini-powered chatbot that processes and summarizes resumes, integrated with WildApricot to pull and manage member data. It is deployed on an AWS EC2 Ubuntu instance with a Flask web server, managed using Gunicorn and Nginx.
 
 ## Features
 
-- Summarizes resumes from WildApricot.
-- Deployable on AWS / Azure / Heroku with an iframe embed to WildApricot as custom HTML.
-- Fully managed on AWS EC2 Ubuntu with Nginx and Gunicorn.
+- Summarizes text from a given text file, to be fed into bot.
+- Deployable on CSES' internal servers, with an iframe embed as custom HTML on Wix.
 
-## Installation
-### Option I: Local environment.
-
-### I. Clone / Download the Repository
-https://techviewleo.com/how-to-install-python-on-debian-system/
-
-Run these commands in the root folder:
-
-```bash
-git clone https://github.com/mixtapeo/ResumeGPT
-cd ResumeGPT
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### II. Create `.env` File
-
-1. Create a new file named `.env` in the root directory.
-2. Add the following environment variables:
-
-```text
-wildapiricot_api_key=<YOUR_WILDAPRICOOT_API_KEY>
-openai_api_key=<YOUR_OPENAI_API_KEY>
-account_id=<YOUR_ACCOUNT_ID>
-```
-
-### III. Run the Flask App
-
-Run `app.py`:
-
-```bash
-python3 app.py
-```
-
-Then go to the IP program is running at (usually 127.0.0.1).
-
-## Option II: Running on AWS EC2.
-### Pre-requisites:
-1. **Make an Instance:** Ubuntu, type t3a.medium recommended, select a key pair, allow HTTP / S trafic.
-2. Once made, under security, add **inbound rule** for port 5000, on 0.0.0.0
-3. **Connect** to Amazon Elastic IP to get a public IP
+# Installation
+## Option I: Debian Server.
+### Pre-requisite:
+Run ``python3 --version``. You must have Python 3.12 or newer. If not, follow this guide: https://techviewleo.com/how-to-install-python-on-debian-system/
    
 ### Setting Up a New Instance
 
@@ -57,15 +20,15 @@ Then go to the IP program is running at (usually 127.0.0.1).
 
    ```bash
    sudo apt-get update
-   sudo apt-get install python3-venv
+   sudo apt-get install python3.12-venv
    ```
 
 2. **Clone the repository and set up the environment:**
 
    ```bash
-   cd /home/ubuntu
-   git clone https://github.com/mixtapeo/ResumeGPT
-   cd ResumeGPT
+   cd $home
+   git clone https://github.com/mixtapeo/CSESChatbot
+   cd CSESChatbot
    python3 -m venv venv
    source venv/bin/activate
    pip install -r requirements.txt
@@ -76,107 +39,11 @@ Then go to the IP program is running at (usually 127.0.0.1).
 
    ```bash
    cat >> .env
-   # Add the 3 environment variables, then Ctrl+C to exit
+   openai_api_key=<YOUR_OPENAI_API_KEY>
+   #ctrl-c to save and exit
    ```
 
-4. **Test Gunicorn:**
 
-   ```bash
-   gunicorn -b 0.0.0.0:5000 app:app
-   # Ctrl+C to exit
-   ```
-
-5. **Set up Gunicorn as a systemd service:**
-
-   ```bash
-   sudo vi /etc/systemd/system/app.service
-   ```
-
-   Edit the file with the following content:
-
-   ```text
-   [Unit]
-   Description=Gunicorn instance for a resume gpt app
-   After=network.target
-   [Service]
-   User=ubuntu
-   Group=www-data
-   WorkingDirectory=/home/ubuntu/ResumeGPT
-   ExecStart=/home/ubuntu/ResumeGPT/venv/bin/gunicorn -b localhost:5000 wsgi:app
-   Restart=always
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-   Save by pressing `Esc` -> `:` -> `wq!`
-
-6. **Start and enable the service:**
-
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl start app
-   sudo systemctl enable app
-   ```
-
-7. **Check if it's working:**
-
-   ```bash
-   curl localhost:5000
-   ```
-
-8. **Install and configure Nginx:**
-
-   ```bash
-   sudo apt-get install nginx
-   sudo systemctl start nginx
-   sudo systemctl enable nginx
-   ```
-
-9. **Edit the Nginx server configuration:**
-
-   ```bash
-   sudo vi /etc/nginx/sites-available/default
-   ```
-
-   Modify it to include:
-
-   ```text
-   upstream flaskapp{
-       server localhost:5000;
-   }
-
-   location / {
-          proxy_pass http://flaskapp;
-          proxy_http_version 1.1;
-          proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection keep-alive;
-          proxy_set_header Host $host;
-          proxy_cache_bypass $http_upgrade;
-        }
-   ```
-
-   Save by pressing `Esc` -> `:` -> `wq!`
-
-10. **Check Nginx configuration validity:**
-
-    ```bash
-    sudo nginx -t
-    ```
-
-11. **Restart Nginx and Gunicorn to apply changes:**
-
-    ```bash
-    sudo systemctl restart nginx
-    pkill gunicorn
-    ```
-
-12. **Allow port 5000 through the firewall:**
-
-    ```bash
-    sudo ufw allow 5000/tcp
-    ```
-
-    Your EC2 virtual machine web app should now be accessible and working!
 
 ### Setting Up a Cron Job
 
@@ -268,21 +135,16 @@ sudo tail -f /var/log/nginx/access.log
 - **gunicorn:** Gunicorn serves as the WSGI HTTP server that handles incoming requests to your Flask application. It forks multiple worker processes to manage these requests concurrently, making it a critical component in a production environment.
 - **CORS**
 - **CRON**
-- **Ubuntu**
-- **AWS EC2**
-- **AWS Elastic IP Addresses**
+- **Debian**
 - **HTML**
 - **JavaScript**
 - **Python**
 - **ChatGPT API**
-- **WildApricot API**
-- **Amazon Machine Images (AMI)**
 - **SSH**
+- **Wix Website Creator**
 
 ## Future TODOs:
-
-- **Batch Translating**: Investigate batch translating as some members are missing when using ChatGPT completions for summarizing. Average tokens sent for summary are ~220K, so batch processing may be more efficient.
-- **HTTPS / iframe embed**: (TLDR; HTTPS setup required) Cannot iframe embed into wildapricot, as currently without SSL cerificate, can't make site HTTPS, which is required to be embeded according to WildApricot. Suggestions: install SSL certificate by buying a domain or investigate hosting code on Amaazon AppRunner or Google equivalent (google run seems to be easier).
+To be known. Just started this fork.
   
 ## App Flows
 ### Current Web App Flow.
@@ -296,8 +158,5 @@ Look at older flow below if using in local environment.
   <img src="https://github.com/user-attachments/assets/44b8c8f5-0b43-445e-b432-4ebcfed9bf96" />
 </p>
 
-## III: Future TODOs:
-Drawback: Look into batch translating. Some people are missing when using multithreading chat completions GPT for summarising. Also chat completions will be unreliable in the future. Avg tokens sent for summary are ~220K. Batch will be better.<br />
-Automating resumeCache and downloading resumes. Currently doesnt do this, have to manually run gpt.py.
 ## App Flow:
 <p align="center"> <img src="https://github.com/user-attachments/assets/44b8c8f5-0b43-445e-b432-4ebcfed9bf96" /> </p>
