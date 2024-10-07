@@ -12,6 +12,7 @@ A GPT 4.0 Mini-powered chatbot that processes and summarizes resumes, integrated
 ### Option I: Local environment.
 
 ### I. Clone / Download the Repository
+https://techviewleo.com/how-to-install-python-on-debian-system/
 
 Run these commands in the root folder:
 
