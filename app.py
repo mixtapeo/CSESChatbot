@@ -1,5 +1,4 @@
 #TODO: fix formatting of the index.html output
-#TODO: make routine in aws
 
 from flask import Flask, request, jsonify, session, render_template, Blueprint, logging
 from gpt import GPT
@@ -9,13 +8,13 @@ from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-CORS(app, resources={r"/api/*": {"origins": "http://35.183.93.138/"}}, supports_credentials=True)
+CORS(app, supports_credentials=True)
 
 # Load environment variables
 load_dotenv()
 
 # Initialize GPT instance
-gpt_instance = GPT(os.getenv('OPENAI_API_KEY'))
+gpt_instance = GPT(os.getenv('openai_api_key'))
 
 @app.route('/')
 def home():
@@ -31,10 +30,10 @@ def start_program():
     session.setdefault('text', [])
 
     try:
-        with open('resumeCache.jsonl') as f:
+        with open('bot_knowledge.txt') as f:
             data = f.readlines()
     except FileNotFoundError:
-        return jsonify({"error": "resumeCache.jsonl failed / doesn't exist. Kindly report to techsupport@synfiny.com"}), 400
+        return jsonify({"error": "botKnowledge.txt failed / doesn't exist. Kindly report to website@cses.carleton.ca"}), 400
 
     # Retrieve conversation history from session
     cookie = session.get('text', [])

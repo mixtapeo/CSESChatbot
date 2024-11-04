@@ -1,18 +1,50 @@
-
 # CSESChatbot
 
-A fork of my original project, ResumeGPT, modified for CSES' use case.
-A GPT 4.0 Mini-powered chatbot that processes and summarizes resumes, integrated with WildApricot to pull and manage member data. It is deployed on an AWS EC2 Ubuntu instance with a Flask web server, managed using Gunicorn and Nginx.
+A GPT 4.0 Mini-powered chatbot that gets data with WixAPI, processes, summarizes CSES site text on backend, into a chatbot w/ OpenAI API. Managed using Gunicorn and Nginx.
 
 ## Features
 
-- Summarizes text from a given text file, to be fed into bot.
-- Deployable on CSES' internal servers, with an iframe embed as custom HTML on Wix.
+- Fully managed on Debian instance with Nginx and Gunicorn.
+- iframe embeded onto CSES site.
+- HTML/CSS site with login.
 
-# Installation
-## Option I: Debian Server.
-### Pre-requisite:
-Run ``python3 --version``. You must have Python 3.12 or newer. If not, follow this guide: https://techviewleo.com/how-to-install-python-on-debian-system/
+## Installation
+### Option I: Local environment.
+
+### I. Clone / Download the Repository
+
+Run these commands in the root folder:
+
+```bash
+git clone https://github.com/mixtapeo/CSESChatbot
+cd CSESChatbot
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### II. Create `.env` File
+
+1. Create a new file named `.env` in the root directory.
+2. Add the following environment variables:
+
+```text
+openai_api_key=<YOUR_OPENAI_API_KEY>
+```
+
+### III. Run the Flask App
+
+Run `app.py`:
+
+```bash
+python3 app.py
+```
+
+Then go to the IP program is running at (usually 127.0.0.1).
+
+## Option II: Running on CSES Server (Debian).
+### Pre-requisites:
+1. **Properties:** allow HTTPS trafic on port 80.
    
 ### Setting Up a New Instance
 
@@ -20,13 +52,13 @@ Run ``python3 --version``. You must have Python 3.12 or newer. If not, follow th
 
    ```bash
    sudo apt-get update
-   sudo apt-get install python3.12-venv
+   sudo apt-get install python3-venv
    ```
 
 2. **Clone the repository and set up the environment:**
 
    ```bash
-   cd $home
+   cd /home/CSESChatbot
    git clone https://github.com/mixtapeo/CSESChatbot
    cd CSESChatbot
    python3 -m venv venv
@@ -39,94 +71,112 @@ Run ``python3 --version``. You must have Python 3.12 or newer. If not, follow th
 
    ```bash
    cat >> .env
-   openai_api_key=<YOUR_OPENAI_API_KEY>
-   #ctrl-c to save and exit
+   # Add the 3 environment variables, then Ctrl+C to exit
    ```
 
-
-
-### Setting Up a Cron Job
-
-To maintain routine tasks:
-
-1. **Download resumes, delete invalid/corrupt files, and summarize:**
-
-   Make sure the `Members.xml` file is in the root directory (`/home/ResumeGPT`).
-
-   Example command to upload from Windows:
+4. **Test Gunicorn:**
 
    ```bash
-   scp -i newkey.pem Members.xml ubuntu@ec2-15-222-60-90.ca-central-1.compute.amazonaws.com:/home/ubuntu/
-   Or just use WinSCP (easy, recommended).
+   gunicorn -b 0.0.0.0:5000 app:wsgi
+   # Ctrl+C to exit
    ```
 
-2. **Set up the cron job:**
+5. **Set up Gunicorn as a systemd service:**
+   Replace username with debian username or root.
+   ```bash
+   sudo vi /etc/systemd/system/app.service
+   CHANGE
+   ```
+
+   Edit the file with the following content:
+
+   ```text
+   [Unit]
+   Description=Gunicorn instance for a resume gpt app
+   After=network.target
+   [Service]
+   User=ubuntu
+   Group=www-data
+   WorkingDirectory=/home/username/CSESChatbot/
+   ExecStart=/home/username/CSESChatbot/venv/bin/gunicorn -b localhost:5000 wsgi:app
+   Restart=always
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   Save by pressing `Esc` -> `:` -> `wq!`
+
+6. **Start and enable the service:**
 
    ```bash
-   crontab -e
+   sudo systemctl daemon-reload
+   sudo systemctl start app
+   sudo systemctl enable app
    ```
 
-   Add the following line:
+7. **Check if it's working:**
 
    ```bash
-   * 6 * * * cd /home/ubuntu/ResumeGPT; source venv/bin/activate; python3 routine.py
+   curl localhost:5000
    ```
 
-   Check status with:
+8. **Install and configure Nginx:**
 
    ```bash
-   systemctl status cron
-
-   And should be working when you run this:
-   crontab -l | grep -v '^#' | cut -f 6- -d ' ' | while read CMD; do eval $CMD; done
+   sudo apt-get install nginx
+   sudo systemctl start nginx
+   sudo systemctl enable nginx
    ```
 
-## Updating the Application
-
-To update the application with the latest code from the repository:
-
-1. Deactivate the virtual environment:
+9. **Edit the Nginx server configuration:**
 
    ```bash
-   deactivate
+   sudo vi /etc/nginx/sites-available/default
    ```
 
-2. Remove the existing directory:
+   Modify it to include:
 
-   ```bash
-   cd ..
-   rm -rf ResumeGPT
+   ```conf
+   server{
+      listen 80;
+      location / {
+            proxy_pass http://localhost:5000;
+            proxy_http_version 1.1;
+            proxy_ssl_server_name on;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection keep-alive;
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+         }
+         access_log /home/asridhar/access.log;
+         error_log /home/asridhar/error.log;
+   }
    ```
 
-3. Clone the repository again:
+   Save by pressing `Esc` -> `:` -> `wq!`
 
-   ```bash
-   git clone https://github.com/mixtapeo/ResumeGPT
-   cd ResumeGPT
-   ```
+10. **Check Nginx configuration validity:**
 
-4. Set up the environment:
+    ```bash
+    sudo nginx -t
+    ```
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   pip install gunicorn
-   ```
+11. **Restart Nginx and Gunicorn to apply changes:**
 
-5. Run the application:
+    ```bash
+    sudo systemctl restart nginx
+    sudo pkill gunicorn
+    ```
 
-   ```bash
-   python3 app.py
-   ```
+Your Debian VM web app should now be accessible and working!
 
 ## Debugging
 
-To collect running logs:
+To collect running logs (Replace username with your username, or root):
 
 ```bash
-sudo tail -f /var/log/nginx/error.log
-sudo tail -f /var/log/nginx/access.log
+sudo tail -f /home/username/error.log
+sudo tail -f /home/username/access.log
 ```
 
 ## Learnings / Tech used:
@@ -134,29 +184,23 @@ sudo tail -f /var/log/nginx/access.log
 - **nginx:** Nginx is used as a reverse proxy to handle client connections, manage static files, and forward dynamic requests to Gunicorn. This improves the security, performance, and scalability.
 - **gunicorn:** Gunicorn serves as the WSGI HTTP server that handles incoming requests to your Flask application. It forks multiple worker processes to manage these requests concurrently, making it a critical component in a production environment.
 - **CORS**
-- **CRON**
+- **Wix**
 - **Debian**
 - **HTML**
 - **JavaScript**
 - **Python**
 - **ChatGPT API**
 - **SSH**
-- **Wix Website Creator**
 
 ## Future TODOs:
-To be known. Just started this fork.
+
+- **Batch Translating**: Investigate batch translating as some members are missing when using ChatGPT completions for summarizing. Average tokens sent for summary are ~220K, so batch processing may be more efficient.
+- **HTTPS / iframe embed**: (TLDR; HTTPS setup required) Cannot iframe embed into wildapricot, as currently without SSL cerificate, can't make site HTTPS, which is required to be embeded according to WildApricot. Suggestions: install SSL certificate by buying a domain or investigate hosting code on Amaazon AppRunner or Google equivalent (google run seems to be easier).
   
 ## App Flows
-### Current Web App Flow.
-Look at older flow below if using in local environment.
-<p align="center">
-  <img src ="https://github.com/user-attachments/assets/e05fb2b8-429c-442b-9b45-1c57a5be5b41" />
-</p>
 
-### [old, initial draw up proposal]
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/44b8c8f5-0b43-445e-b432-4ebcfed9bf96" />
-</p>
-
-## App Flow:
-<p align="center"> <img src="https://github.com/user-attachments/assets/44b8c8f5-0b43-445e-b432-4ebcfed9bf96" /> </p>
+## III: Future TODOs:
+Drawback: Look into batch translating. Some people are missing when using multithreading chat completions GPT for summarising. Also chat completions will be unreliable in the future. Avg tokens sent for summary are ~220K. Batch will be better.<br />
+Automating resumeCache and downloading resumes. Currently doesnt do this, have to manually run gpt.py.<br />
+Add an animation when showing gpt response <br />
+wix api for data<br />

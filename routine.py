@@ -1,7 +1,7 @@
 from gpt import GPT
 import os
 from dotenv import load_dotenv
-import ResumesDownloader
+import csesScraper
 
 load_dotenv()
 gpt_instance = GPT(os.getenv('OPENAI_API'))
