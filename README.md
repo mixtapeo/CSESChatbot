@@ -30,6 +30,8 @@ pip install -r requirements.txt --no-cache-dir
 
 ```text
 openai_api_key=<YOUR_OPENAI_API_KEY>
+chatbot_admin_username=<>
+chatbot_admin_password=<>
 ```
 
 ### III. Run the Flask App
