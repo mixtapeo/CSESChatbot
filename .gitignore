@@ -6,3 +6,4 @@ bot_knowledge.txt
 GPTout.json
 .vscode/settings.json
 __pycache__/ResumesDownloader.cpython-312.pyc
+/__pycache__

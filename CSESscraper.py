@@ -5,12 +5,8 @@ import xml.etree.ElementTree as ET
 import time
 #look into scraping CSES or using wix api
 class WildApricotAPI:
-    def __init__(self, api_key, account_id):
+    def __init__(self, api_key):
         self.api_key = api_key
-        self.account_id = account_id
-        self.base_url = f'https://api.wildapricot.org/v2.3/accounts/{account_id}'
-        self.token_url = 'https://oauth.wildapricot.org/auth/token'
-        self.access_token = self.get_access_token()
 
     def get_access_token(self):
         encoded_api_key = base64.b64encode(f"APIKEY:{self.api_key}".encode()).decode()
@@ -25,32 +21,6 @@ class WildApricotAPI:
             return response.json()['access_token']
         else:
             raise Exception(f"Failed to retrieve token: {response.content}")
-
-    def get_headers(self):
-        return {
-            'Authorization': f'Bearer {self.access_token}',
-            'Accept': 'application/json'
-        }
-
-    def extract_file_ids(self, xml_file_path):
-        tree = ET.parse(xml_file_path)
-        root = tree.getroot()
-
-        ns = {'ss': 'urn:schemas-microsoft-com:office:spreadsheet'}
-        file_ids = []
-
-        for row in root.findall('.//ss:Row', ns)[1:]:
-            cells = row.findall('ss:Cell', ns)
-            resume_file_ids = cells[32].find('ss:Data', ns).text.split(',') if len(cells) > 32 and cells[32].find('ss:Data', ns).text else []
-            bio_file_ids = cells[31].find('ss:Data', ns).text.split(',') if len(cells) > 31 and cells[31].find('ss:Data', ns).text else []
-
-            if resume_file_ids is not None and bio_file_ids is not None:
-                file_ids.append({
-                    'Resume': resume_file_ids,
-                    'Bio': bio_file_ids
-                })
-
-        return file_ids
 
     def download_attachment(self, file_id, folder_path):
         try:

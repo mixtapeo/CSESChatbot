@@ -20,7 +20,7 @@ git clone https://github.com/mixtapeo/CSESChatbot
 cd CSESChatbot
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt --no-cache-dir
 ```
 
 ### II. Create `.env` File
@@ -85,17 +85,15 @@ Then go to the IP program is running at (usually 127.0.0.1).
    Replace username with debian username or root.
    ```bash
    sudo vi /etc/systemd/system/app.service
-   CHANGE
    ```
 
-   Edit the file with the following content:
-
-   ```text
+   Edit the file with the following content (Use your username):
+   ```conf
    [Unit]
    Description=Gunicorn instance for a resume gpt app
    After=network.target
    [Service]
-   User=ubuntu
+   User=username
    Group=www-data
    WorkingDirectory=/home/username/CSESChatbot/
    ExecStart=/home/username/CSESChatbot/venv/bin/gunicorn -b localhost:5000 wsgi:app
@@ -134,8 +132,7 @@ Then go to the IP program is running at (usually 127.0.0.1).
    sudo vi /etc/nginx/sites-available/default
    ```
 
-   Modify it to include:
-
+   Modify it to include (Again, use your own username or root):
    ```conf
    server{
       listen 80;
@@ -148,8 +145,8 @@ Then go to the IP program is running at (usually 127.0.0.1).
             proxy_set_header Host $host;
             proxy_cache_bypass $http_upgrade;
          }
-         access_log /home/asridhar/access.log;
-         error_log /home/asridhar/error.log;
+      access_log /home/username/access.log;
+      error_log /home/username/error.log;
    }
    ```
 
@@ -179,6 +176,19 @@ sudo tail -f /home/username/error.log
 sudo tail -f /home/username/access.log
 ```
 
+To see app service status:
+```bash
+sudo systemctl status app
+```
+
+To see gunicorn logs:
+```bash
+cd CSESChatbot
+gunicorn --log-file=- -b localhost:8000 wsgi:app
+```
+
+
+
 ## Learnings / Tech used:
 
 - **nginx:** Nginx is used as a reverse proxy to handle client connections, manage static files, and forward dynamic requests to Gunicorn. This improves the security, performance, and scalability.
@@ -191,16 +201,9 @@ sudo tail -f /home/username/access.log
 - **Python**
 - **ChatGPT API**
 - **SSH**
-
-## Future TODOs:
-
-- **Batch Translating**: Investigate batch translating as some members are missing when using ChatGPT completions for summarizing. Average tokens sent for summary are ~220K, so batch processing may be more efficient.
-- **HTTPS / iframe embed**: (TLDR; HTTPS setup required) Cannot iframe embed into wildapricot, as currently without SSL cerificate, can't make site HTTPS, which is required to be embeded according to WildApricot. Suggestions: install SSL certificate by buying a domain or investigate hosting code on Amaazon AppRunner or Google equivalent (google run seems to be easier).
   
 ## App Flows
 
 ## III: Future TODOs:
-Drawback: Look into batch translating. Some people are missing when using multithreading chat completions GPT for summarising. Also chat completions will be unreliable in the future. Avg tokens sent for summary are ~220K. Batch will be better.<br />
-Automating resumeCache and downloading resumes. Currently doesnt do this, have to manually run gpt.py.<br />
 Add an animation when showing gpt response <br />
-wix api for data<br />
+wix api for data or webscraping cses site<br />

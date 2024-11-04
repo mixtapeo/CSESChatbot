@@ -23,6 +23,7 @@ How the program works:
 Also has utility function of create_batch_summary to summarize all texts in one go.
 """
 
+
 class GPT:
     def __init__(self, api_key):
         self.client = OpenAI(api_key=api_key)
@@ -126,7 +127,7 @@ class GPT:
 
             # Save to file for debug
         with open("bot_knowledge_cache.txt", "w") as file:
-            json.dump({f"GPTout, {datetime.datetime.now()}": file_response.text}, file, indent=4)
+            json.dump({f"GPTout": file_response.text}, file, indent=4)
             # json.dump({"content": content}, file, indent=4) # Debug: Compare input from files to output by GPT
         return file_response.text
 
@@ -189,8 +190,7 @@ class GPT:
                 raise Exception("Batch failed")
             else:
                 print(
-                    f"Waiting for batch to complete. Current status: {
-                      batch_job.status}"
+                    f"Waiting for batch to complete. Current status: {batch_job.status}"
                 )
                 time.sleep(15)  # Wait 15 seconds before checking again
 
@@ -241,8 +241,9 @@ class GPT:
         return results
 
     def refresh_summary(self):
+        #need to fix / implement
         # Save to file for debug
-        with open("bot_knowledge_cache.txt", "w") as file:
+        with open("bot_knowledge.txt", "w") as file:
             file.truncate()
 
         # Path to local directory containing texts
@@ -252,11 +253,11 @@ class GPT:
 
         GPT_inst = GPT(os.getenv("openai_api_key"))
 
-        with open("bot_knowledge_cache.txt", "w") as file:
+        with open("bot_knowledge.txt", "w") as file:
             json.dump({"text": text_text}, file, indent=4)
 
         batch_input_file = GPT_inst.client.files.create(
-            file=open((os.path.join(os.getcwd(), "bot_knowledge_cache.txt")), "rb"),
+            file=open((os.path.join(os.getcwd(), "bot_knowledge.txt")), "rb"),
             purpose="batch",
         )
 
@@ -280,7 +281,13 @@ class GPT:
 
         # Save the response to a JSON file
         with open("GPTout.json", "w") as file:
-            json.dump({"GPTout": reply}, file, indent=4)
+            json.dump(
+                {
+                    f"GPTout {datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), '%Y-%m-%d %H:%M')}": reply
+                },
+                file,
+                indent=4,
+            )
 
         # Pretty print the final result
         with open("GPTout.json", "r") as j:
@@ -325,6 +332,9 @@ def dev_start():
         print("Summary cache refreshed.")
     else:
         print("Loaded previous data.")
+        if not os.path.isfile("bot_knowledge_cache.txt"):
+            with open("bot_knowledge_cache.txt", "w") as f:
+                f.write("[]")  # Initialize with empty JSON array
         with open("bot_knowledge_cache.txt") as f:
             data = f.readlines()
 
