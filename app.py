@@ -44,6 +44,11 @@ def logout():
 def home():
     return render_template('index.html')
 
+
+@app.route('/embed')
+def embed():
+    return render_template('embed.html')
+
 @app.route('/api/chat', methods=['POST'])
 def start_program():
     """
