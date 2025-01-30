@@ -1,12 +1,17 @@
 # CSESChatbot
-
+<img src="https://github.com/user-attachments/assets/4a076b60-faa1-49a6-a5dc-17f06009faa5" height="510" />
+<img src="https://github.com/user-attachments/assets/3070120d-159d-4f98-b98d-099835623f58" height="510" /></p>
 A GPT 4.0 Mini-powered chatbot that gets data with WixAPI, processes, summarizes CSES site text on backend, into a chatbot w/ OpenAI API. Managed using Gunicorn and Nginx.
 
 ## Features
-
 - Fully managed on Debian instance with Nginx and Gunicorn.
 - iframe embeded onto CSES site.
-- HTML/CSS site with login.
+- Internal API requests to call chat completions.
+- HTML/CSS sites:
+   - Zoomed in "embed" site.
+   - Admin login page
+   - Admin panel with previous chats, and a place to update bot knowledge.
+   - Under templates folder.
 
 ## Installation
 ### Option I: Local environment.
@@ -203,8 +208,6 @@ gunicorn --log-file=- -b localhost:8000 wsgi:app
 - **Python**
 - **ChatGPT API**
 - **SSH**
-  
-## App Flows
 
 ## III: Future TODOs:
 Add an animation when showing gpt response <br />
