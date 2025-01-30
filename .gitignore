@@ -1,15 +1,9 @@
-# ignore ALL files in ANY directory named files
-files/
-.venv/
-__pycache__/
-archive/
 
-# ignore these files:
-#.txt
-#.xml
-#.json
 .env
-content.txt
-*.jsonl
-test.py
-routine.sh
+.gitattributes
+bot_knowledge.txt
+*.txt
+GPTout.json
+.vscode/settings.json
+__pycache__/ResumesDownloader.cpython-312.pyc
+/__pycache__

@@ -1,7 +1,6 @@
 #TODO: fix formatting of the index.html output
-#TODO: make routine in aws
 
-from flask import Flask, request, jsonify, session, render_template, Blueprint, logging
+from flask import Flask, request, jsonify, session, render_template, Blueprint, logging, redirect, url_for
 from gpt import GPT
 import os
 from dotenv import load_dotenv
@@ -9,17 +8,46 @@ from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-CORS(app, resources={r"/api/*": {"origins": "http://35.183.93.138/"}}, supports_credentials=True)
+CORS(app, supports_credentials=True)
 
 # Load environment variables
 load_dotenv()
 
 # Initialize GPT instance
-gpt_instance = GPT(os.getenv('OPENAI_API_KEY'))
+gpt_instance = GPT(os.getenv('openai_api_key'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """
+    User login route.
+    """
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        # Replace with actual authentication logic
+        if username == os.getenv('chatbot_admin_username')and password == os.getenv("chatbot_admin_password"):
+            session['logged_in'] = True
+            return redirect(url_for('admin'))
+        else:
+            return render_template('login.html', error='Invalid Credentials')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    """
+    User logout route.
+    """
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
 @app.route('/')
 def home():
     return render_template('index.html')
+
+
+@app.route('/embed')
+def embed():
+    return render_template('embed.html')
 
 @app.route('/api/chat', methods=['POST'])
 def start_program():
@@ -31,10 +59,11 @@ def start_program():
     session.setdefault('text', [])
 
     try:
-        with open('resumeCache.jsonl') as f:
+        with open("bot_knowledge.txt", encoding='utf-8') as f:
             data = f.readlines()
+            print("Loaded previous data.")
     except FileNotFoundError:
-        return jsonify({"error": "resumeCache.jsonl failed / doesn't exist. Kindly report to techsupport@synfiny.com"}), 400
+        return jsonify({"error": "botKnowledge.txt failed / doesn't exist. Kindly report to website@cses.carleton.ca"}), 400
 
     # Retrieve conversation history from session
     cookie = session.get('text', [])
@@ -59,6 +88,52 @@ def start_program():
     app.logger.info("Request received: %s", request.json)
     return add_cors_headers(response)
 
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    """
+    Admin login portal: Review all chats, update / view bot text.
+    """
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    bot_knowledge = ""
+    gpt_output = ""
+    
+    try:
+        with open('bot_knowledge.txt', 'r') as f:
+            bot_knowledge = f.read()
+    except FileNotFoundError:
+        bot_knowledge = "bot_knowledge.txt not found."
+    
+    try:
+        with open('GPTout.json', 'r') as f:
+            gpt_output = f.read()
+    except FileNotFoundError:
+        gpt_output = "GPTout.json not found."
+    
+    if request.method == 'POST':
+        # Handle admin actions here
+        if 'new_content' in request.form:
+            return update_bot_text()
+    
+    return render_template('admin.html', bot_knowledge=bot_knowledge, gpt_output=gpt_output)
+
+@app.route('/update_bot_text', methods = ['POST'])
+def update_bot_text():
+    """
+    Update the bot_knowledge.txt file with new content.
+    """
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    new_content = request.form['new_content']
+    try:
+        with open('bot_knowledge.txt', 'w') as f:
+            f.write(new_content)
+        return jsonify({"message": "Bot knowledge updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/close', methods=['POST'])
 def close():
     """
@@ -79,4 +154,4 @@ def add_cors_headers(response):
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=8000)
