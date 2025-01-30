@@ -74,21 +74,26 @@ Then go to the IP program is running at (usually 127.0.0.1).
    pip install gunicorn
    ```
 
-3. **Create `.env` File:**
+3. **Create Bot Knowledge and GPTout:**
+   You'd want the bot to know about CSES right? Make a bot_knowledge.txt in the root folder, populate it with all the information the bot should know.
+   Next, create an empty GPTout.json file.
+   Done!
+   
+5. **Create `.env` File:**
 
    ```bash
    cat >> .env
    # Add the 3 environment variables, then Ctrl+C to exit
    ```
 
-4. **Test Gunicorn:**
+6. **Test Gunicorn:**
 
    ```bash
    gunicorn -b 0.0.0.0:5000 app:wsgi
    # Ctrl+C to exit
    ```
 
-5. **Set up Gunicorn as a systemd service:**
+7. **Set up Gunicorn as a systemd service:**
    Replace username with debian username or root.
    ```bash
    sudo vi /etc/systemd/system/app.service
@@ -111,7 +116,7 @@ Then go to the IP program is running at (usually 127.0.0.1).
 
    Save by pressing `Esc` -> `:` -> `wq!`
 
-6. **Start and enable the service:**
+8. **Start and enable the service:**
 
    ```bash
    sudo systemctl daemon-reload
@@ -119,13 +124,13 @@ Then go to the IP program is running at (usually 127.0.0.1).
    sudo systemctl enable app
    ```
 
-7. **Check if it's working:**
+9. **Check if it's working:**
 
    ```bash
    curl localhost:5000
    ```
 
-8. **Install and configure Nginx:**
+10. **Install and configure Nginx:**
 
    ```bash
    sudo apt-get install nginx
@@ -133,7 +138,7 @@ Then go to the IP program is running at (usually 127.0.0.1).
    sudo systemctl enable nginx
    ```
 
-9. **Edit the Nginx server configuration:**
+11. **Edit the Nginx server configuration:**
 
    ```bash
    sudo vi /etc/nginx/sites-available/default
@@ -159,13 +164,13 @@ Then go to the IP program is running at (usually 127.0.0.1).
 
    Save by pressing `Esc` -> `:` -> `wq!`
 
-10. **Check Nginx configuration validity:**
+11. **Check Nginx configuration validity:**
 
     ```bash
     sudo nginx -t
     ```
 
-11. **Restart Nginx and Gunicorn to apply changes:**
+12. **Restart Nginx and Gunicorn to apply changes:**
 
     ```bash
     sudo systemctl restart nginx
