@@ -59,8 +59,9 @@ def start_program():
     session.setdefault('text', [])
 
     try:
-        with open('bot_knowledge.txt') as f:
+        with open("bot_knowledge.txt", encoding='utf-8') as f:
             data = f.readlines()
+            print("Loaded previous data.")
     except FileNotFoundError:
         return jsonify({"error": "botKnowledge.txt failed / doesn't exist. Kindly report to website@cses.carleton.ca"}), 400
 
